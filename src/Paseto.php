@@ -15,9 +15,11 @@ use DateInterval;
 use DateTimeImmutable;
 use ParagonIE\Paseto\Builder;
 use ParagonIE\Paseto\Exception\PasetoException;
-use ParagonIE\Paseto\Keys\Base\AsymmetricPublicKey;
-use ParagonIE\Paseto\Keys\Base\AsymmetricSecretKey;
 use ParagonIE\Paseto\Keys\Base\SymmetricKey;
+use ParagonIE\Paseto\Keys\Version3\AsymmetricPublicKey as Version3AsymmetricPublicKey;
+use ParagonIE\Paseto\Keys\Version3\AsymmetricSecretKey as Version3AsymmetricSecretKey;
+use ParagonIE\Paseto\Keys\Version4\AsymmetricPublicKey as Version4AsymmetricPublicKey;
+use ParagonIE\Paseto\Keys\Version4\AsymmetricSecretKey as Version4AsymmetricSecretKey;
 use ParagonIE\Paseto\Parser;
 use ParagonIE\Paseto\Protocol\Version3;
 use ParagonIE\Paseto\Protocol\Version4;
@@ -87,6 +89,7 @@ final class Paseto
             ->setVersion($this->version)
             ->setPurpose($this->purpose)
             ->setIssuedAt()
+            ->setNotBefore()
             ->setExpiration((new DateTimeImmutable())->add(new DateInterval('PT' . $this->ttl . 'S')))
             ->setClaims($claims)
             ->toString();
@@ -126,7 +129,7 @@ final class Paseto
     /** @return array{object, object} */
     private function keys(string $key, string $secretKey, string $publicKey): array
     {
-        if ($this->purpose === Purpose::local()) {
+        if ($this->purpose->equals(Purpose::local())) {
             $raw = self::decode($key);
             if (\strlen($raw) !== 32) {
                 throw new \InvalidArgumentException('PASETO local key must decode to 32 bytes.');
@@ -137,7 +140,15 @@ final class Paseto
         if ($secretKey === '' || $publicKey === '') {
             throw new \InvalidArgumentException('PASETO public purpose requires secret_key and public_key.');
         }
-        return [AsymmetricSecretKey::fromEncodedString($secretKey), AsymmetricPublicKey::fromEncodedString($publicKey)];
+        return $this->version instanceof Version3
+            ? [
+                Version3AsymmetricSecretKey::fromEncodedString($secretKey),
+                Version3AsymmetricPublicKey::fromEncodedString($publicKey),
+            ]
+            : [
+                Version4AsymmetricSecretKey::fromEncodedString($secretKey),
+                Version4AsymmetricPublicKey::fromEncodedString($publicKey),
+            ];
     }
 
     private function versions(): ProtocolCollection

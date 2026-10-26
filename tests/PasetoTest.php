@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Puff\Paseto\Tests;
 
-use ParagonIE\Paseto\Keys\Base\AsymmetricSecretKey;
+use ParagonIE\Paseto\Keys\Version4\AsymmetricSecretKey;
 use PHPUnit\Framework\TestCase;
 use Puff\Paseto\Exception\InvalidToken;
 use Puff\Paseto\Paseto;
