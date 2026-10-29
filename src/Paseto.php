@@ -70,10 +70,14 @@ final class Paseto
     }
 
     /** @param array<string, mixed> $claims */
-    public function issue(string $subject, array $claims = []): string
+    public function issue(string $subject, array $claims = [], ?int $ttl = null): string
     {
         if ($subject === '') {
             throw new \InvalidArgumentException('PASETO subject cannot be empty.');
+        }
+        $ttl ??= $this->ttl;
+        if ($ttl < 1) {
+            throw new \InvalidArgumentException('PASETO TTL must be positive.');
         }
 
         $claims = \array_replace($claims, ['sub' => $subject]);
@@ -90,9 +94,14 @@ final class Paseto
             ->setPurpose($this->purpose)
             ->setIssuedAt()
             ->setNotBefore()
-            ->setExpiration((new DateTimeImmutable())->add(new DateInterval('PT' . $this->ttl . 'S')))
+            ->setExpiration((new DateTimeImmutable())->add(new DateInterval('PT' . $ttl . 'S')))
             ->setClaims($claims)
             ->toString();
+    }
+
+    public function ttl(): int
+    {
+        return $this->ttl;
     }
 
     /** @return array<string, mixed> */
